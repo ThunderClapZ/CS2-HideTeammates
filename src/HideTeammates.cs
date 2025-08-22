@@ -17,8 +17,6 @@ namespace CS2_HideTeammates
 		readonly float TIMERTIME = 0.3f;
 		bool g_bEnable = true;
 		int g_iMaxDistance = 8000;
-		bool g_bHideComm = false;
-		bool g_bHideIgnoreAttachments = false;
 		bool[] g_bHide = new bool[65];
 		int[] g_iDistance = new int[65];
 		bool[] g_bRMB = new bool[65];
@@ -27,12 +25,10 @@ namespace CS2_HideTeammates
 
 		public FakeConVar<bool> Cvar_Enable = new("css_ht_enabled", "Disabled/enabled [0/1]", true, flags: ConVarFlags.FCVAR_NOTIFY, new RangeValidator<bool>(false, true));
 		public FakeConVar<int> Cvar_MaxDistance = new("css_ht_maximum", "The maximum distance a player can choose [1000-8000]", 8000, flags: ConVarFlags.FCVAR_NOTIFY, new RangeValidator<int>(1000, 8000));
-		public FakeConVar<bool> Cvar_HideComm = new("css_ht_hidecomm", "Disabled/enabled use of hide word for commands [0/1]", false, flags: ConVarFlags.FCVAR_NOTIFY, new RangeValidator<bool>(false, true));
-		public FakeConVar<bool> Cvar_HideIgnoreAttachments = new("css_ht_hideia", "Disabled/enabled ignoring player attachments (ex. prop leader glow) [0/1]", false, flags: ConVarFlags.FCVAR_NOTIFY, new RangeValidator<bool>(false, true));
-		public override string ModuleName => "Hide Teammates";
+		public override string ModuleName => "HideTeammates";
 		public override string ModuleDescription => "A plugin that can !hide with individual distances";
 		public override string ModuleAuthor => "DarkerZ [RUS]";
-		public override string ModuleVersion => "1.DZ.8";
+		public override string ModuleVersion => "";
 		public override void OnAllPluginsLoaded(bool hotReload)
 		{
 			if (hotReload)
@@ -61,20 +57,6 @@ namespace CS2_HideTeammates
 				if (value >= 1000 && value <= 8000) g_iMaxDistance = value;
 				else g_iMaxDistance = 8000;
 				UI.CvarChangeNotify(Cvar_MaxDistance.Name, value.ToString(), Cvar_MaxDistance.Flags.HasFlag(ConVarFlags.FCVAR_NOTIFY));
-			};
-
-			g_bHideComm = Cvar_HideComm.Value;
-			Cvar_HideComm.ValueChanged += (sender, value) =>
-			{
-				g_bHideComm = value;
-				UI.CvarChangeNotify(Cvar_HideComm.Name, value.ToString(), Cvar_HideComm.Flags.HasFlag(ConVarFlags.FCVAR_NOTIFY));
-			};
-
-			g_bHideIgnoreAttachments = Cvar_HideComm.Value;
-			Cvar_HideIgnoreAttachments.ValueChanged += (sender, value) =>
-			{
-				g_bHideIgnoreAttachments = value;
-				UI.CvarChangeNotify(Cvar_HideIgnoreAttachments.Name, value.ToString(), Cvar_HideIgnoreAttachments.Flags.HasFlag(ConVarFlags.FCVAR_NOTIFY));
 			};
 
 			RegisterFakeConVars(typeof(ConVar));
@@ -110,9 +92,7 @@ namespace CS2_HideTeammates
 		}
 		HookResult OnEventPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
 		{
-#nullable enable
-			CCSPlayerController? player = @event.Userid;
-#nullable disable
+			CCSPlayerController player = @event.Userid;
 			if (player != null && player.IsValid)
 			{
 				g_bHide[player.Slot] = false;
@@ -138,15 +118,13 @@ namespace CS2_HideTeammates
 		void OnTransmit(CCheckTransmitInfoList infoList)
 		{
 			if (!g_bEnable) return;
-#nullable enable
-			foreach ((CCheckTransmitInfo info, CCSPlayerController? player) in infoList)
-#nullable disable
+			foreach ((CCheckTransmitInfo info, CCSPlayerController player) in infoList)
 			{
 				if (player == null || !player.IsValid || player.IsBot || player.IsHLTV || !player.Pawn.IsValid || player.Pawn.Value == null) continue;
 
 				foreach (CCSPlayerController targetPlayer in g_Target[player.Slot].ToList())
 				{
-					if (targetPlayer.IsValid && targetPlayer.Pawn.IsValid && targetPlayer.Pawn.Value.LifeState == (byte)LifeState_t.LIFE_ALIVE && (g_bHideIgnoreAttachments || !targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.Owner.DesignerName.Equals("prop_dynamic") && !targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.NextSibling.Owner.DesignerName.Equals("prop_dynamic")))
+					if (targetPlayer.IsValid && targetPlayer.Pawn.IsValid && targetPlayer.Pawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE)
 						info.TransmitEntities.Remove(targetPlayer.Pawn.Value);
 				}
 			}
@@ -158,14 +136,14 @@ namespace CS2_HideTeammates
 			Utilities.GetPlayers().Where(p => p.IsValid && p.Pawn.IsValid).ToList().ForEach(player =>
 			{
 				g_Target[player.Slot].Clear();
-				if (g_bHide[player.Slot] && player.Pawn.Value.LifeState == (byte)LifeState_t.LIFE_ALIVE)
+				if (g_bHide[player.Slot] && player.Pawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE)
 				{
-					Utilities.GetPlayers().Where(target => target != null && target.IsValid && target.Pawn.IsValid && !g_bRMB[player.Slot] && target.Slot != player.Slot && target.Team == player.Team && target.Pawn.Value.LifeState == (byte)LifeState_t.LIFE_ALIVE).ToList().ForEach(targetplayer =>
+					Utilities.GetPlayers().Where(target => target != null && target.IsValid && target.Pawn.IsValid && !g_bRMB[player.Slot] && target.Slot != player.Slot && target.Team == player.Team && target.Pawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE).ToList().ForEach(targetplayer =>
 					{
 						if (g_iDistance[player.Slot] == 0) g_Target[player.Slot].Add(targetplayer);
 						else
 						{
-							if (Distance((System.Numerics.Vector3)targetplayer.Pawn.Value?.AbsOrigin, (System.Numerics.Vector3)player.Pawn.Value?.AbsOrigin) <= g_iDistance[player.Slot])
+							if (Distance((System.Numerics.Vector3)targetplayer.Pawn.Value?.AbsOrigin!, (System.Numerics.Vector3)player.Pawn.Value?.AbsOrigin!) <= g_iDistance[player.Slot])
 							{
 								g_Target[player.Slot].Add(targetplayer);
 							}
@@ -174,11 +152,9 @@ namespace CS2_HideTeammates
 				}
 			});
 		}
-#nullable enable
-		[ConsoleCommand("css_ht", "Allows to hide players and choose the distance")]
+		[ConsoleCommand("css_hide", "Allows to hide players and choose the distance")]
 		[CommandHelper(minArgs: 0, usage: "", whoCanExecute: CommandUsage.CLIENT_ONLY)]
-		public void OnCommandHide(CCSPlayerController? player, CommandInfo command)
-#nullable disable
+		public void OnCommandHide(CCSPlayerController player, CommandInfo command)
 		{
 			if (player == null || !player.IsValid) return;
 			bool bConsole = command.CallingContext == CommandCallingContext.Console;
@@ -217,57 +193,11 @@ namespace CS2_HideTeammates
 				}
 			}
 		}
-#nullable enable
-		[ConsoleCommand("css_hide", "Allows to hide players and choose the distance")]
-		[CommandHelper(minArgs: 0, usage: "", whoCanExecute: CommandUsage.CLIENT_ONLY)]
-		public void OnCommandHideWord(CCSPlayerController? player, CommandInfo command)
-#nullable disable
-		{
-			if (g_bHideComm) OnCommandHide(player, command);
-		}
-#nullable enable
-		[ConsoleCommand("css_htall", "Allows to hide players and choose the distance")]
-		[CommandHelper(minArgs: 0, usage: "", whoCanExecute: CommandUsage.CLIENT_ONLY)]
-		public void OnCommandHideAll(CCSPlayerController? player, CommandInfo command)
-#nullable disable
-		{
-			if (player == null || !player.IsValid) return;
-			bool bConsole = command.CallingContext == CommandCallingContext.Console;
-			if (!g_bEnable)
-			{
-				UI.ReplyToCommand(player, bConsole, "Reply.PluginDisabled");
-				return;
-			}
-			
-			g_bHide[player.Slot] = !g_bHide[player.Slot];
-			SetValue(player);
-			if (g_bHide[player.Slot])
-			{
-				if (g_iDistance[player.Slot] == 0) UI.ReplyToCommand(player, bConsole, "Reply.EnableAllMap");
-				else UI.ReplyToCommand(player, bConsole, "Reply.Enable", g_iDistance[player.Slot]);
-			}
-			else
-			{
-				UI.ReplyToCommand(player, bConsole, "Reply.Disable");
-			}
-		}
-#nullable enable
-		[ConsoleCommand("css_hideall", "Allows to hide players and choose the distance")]
-		[CommandHelper(minArgs: 0, usage: "", whoCanExecute: CommandUsage.CLIENT_ONLY)]
-		public void OnCommandHideAllWord(CCSPlayerController? player, CommandInfo command)
-#nullable disable
-		{
-			if (g_bHideComm) OnCommandHideAll(player, command);
-		}
-#nullable enable
-		void GetValue(CCSPlayerController? player)
-#nullable disable
+		void GetValue(CCSPlayerController player)
 		{
 			if (player == null || !player.IsValid) return;
 		}
-#nullable enable
-		void SetValue(CCSPlayerController? player)
-#nullable disable
+		void SetValue(CCSPlayerController player)
 		{
 			if (player == null || !player.IsValid) return;
 		}
