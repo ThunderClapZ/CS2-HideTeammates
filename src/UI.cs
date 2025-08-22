@@ -37,7 +37,7 @@ namespace CS2_HideTeammates
 					using (new WithTemporaryCulture(player.GetLanguage()))
 					{
 						if (!bConsole) player.PrintToChat($" \x0B[\x04HT\x0B]\x01 {ReplaceColorTags(Strlocalizer[sMessage, arg])}");
-						else player.PrintToConsole($"[HT] {ReplaceColorTags(Strlocalizer[sMessage, arg], false)}");
+						else player.PrintToConsole($"[Hoshi-Star] {ReplaceColorTags(Strlocalizer[sMessage, arg], false)}");
 					}
 				}
 			});
