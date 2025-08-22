@@ -1,8 +1,8 @@
 {
-  "Cvar.Notify": "Cvar '{0}' has been changed to '{1}'",
-  "Reply.PluginDisabled": "Hide command is currently {red}disabled",
-  "Reply.EnableAllMap": "Hiding teammates across the {lightblue}entire map",
-  "Reply.Enable": "Hiding teammates within {lightblue}{0} {default}units",
-  "Reply.Wrong": "{red}Wrong distance input{default}, range must be between {lime}0{default}-{lime}{0}",
-  "Reply.Disable": "{red}Unhidden {default}all teammates"
-} 
+  "Cvar.Notify": "参数 '{0}' 已更改为 '{1}'",
+  "Reply.PluginDisabled": "隐藏指令目前为{red}禁用",
+  "Reply.EnableAllMap": "正在于{lightblue}全地图{default}范围内隐藏队友",
+  "Reply.Enable": "正在于{lightblue}{0}{default}单位范围内隐藏队友",
+  "Reply.Wrong": "{red}距离输入错误{default}，范围必须在 {lime}0{default} 至 {lime}{0}{default} 之间",
+  "Reply.Disable": "{red}已取消隐藏{default}所有队友"
+}
