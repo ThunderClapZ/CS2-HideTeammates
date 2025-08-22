@@ -7,7 +7,6 @@ using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Cvars.Validators;
 using CounterStrikeSharp.API.Modules.Timers;
-using PlayerSettings;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace CS2_HideTeammates
@@ -16,10 +15,6 @@ namespace CS2_HideTeammates
 	public class HideTeammates : BasePlugin
 	{
 		readonly float TIMERTIME = 0.3f;
-#nullable enable
-		private ISettingsApi? _PlayerSettingsAPI;
-		private readonly PluginCapability<ISettingsApi?> _PlayerSettingsAPICapability = new("settings:nfcore");
-#nullable disable
 		bool g_bEnable = true;
 		int g_iMaxDistance = 8000;
 		bool g_bHideComm = false;
@@ -40,10 +35,6 @@ namespace CS2_HideTeammates
 		public override string ModuleVersion => "1.DZ.8";
 		public override void OnAllPluginsLoaded(bool hotReload)
 		{
-			_PlayerSettingsAPI = _PlayerSettingsAPICapability.Get();
-			if (_PlayerSettingsAPI == null)
-				UI.PrintToConsole("PlayerSettings core not found...");
-
 			if (hotReload)
 			{
 				Utilities.GetPlayers().Where(p => p is { IsValid: true, IsBot: false, IsHLTV: false }).ToList().ForEach(player =>
@@ -155,9 +146,6 @@ namespace CS2_HideTeammates
 
 				foreach (CCSPlayerController targetPlayer in g_Target[player.Slot].ToList())
 				{
-					//Console.WriteLine($"Child: {targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.Owner.DesignerName} Index: {targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.Owner.Index}");
-					//targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.Child == null - is there any model attached to the player?
-					//if (targetPlayer.IsValid && targetPlayer.Pawn.IsValid && targetPlayer.Pawn.Value != null && targetPlayer.Pawn.Value.LifeState == (byte)LifeState_t.LIFE_ALIVE && (g_bHideIgnoreAttachments || targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.Child == null))
 					if (targetPlayer.IsValid && targetPlayer.Pawn.IsValid && targetPlayer.Pawn.Value.LifeState == (byte)LifeState_t.LIFE_ALIVE && (g_bHideIgnoreAttachments || !targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.Owner.DesignerName.Equals("prop_dynamic") && !targetPlayer.Pawn.Value.CBodyComponent.SceneNode.Child.NextSibling.Owner.DesignerName.Equals("prop_dynamic")))
 						info.TransmitEntities.Remove(targetPlayer.Pawn.Value);
 				}
@@ -276,32 +264,12 @@ namespace CS2_HideTeammates
 #nullable disable
 		{
 			if (player == null || !player.IsValid) return;
-			if (_PlayerSettingsAPI != null)
-			{
-				string sHide = _PlayerSettingsAPI.GetPlayerSettingsValue(player, "HT_Hide", "0");
-				if (string.IsNullOrEmpty(sHide) || !Int32.TryParse(sHide, out int iHide)) iHide = 0;
-				if (iHide == 0) g_bHide[player.Slot] = false;
-				else g_bHide[player.Slot] = true;
-
-				string sDistance = _PlayerSettingsAPI.GetPlayerSettingsValue(player, "HT_Distance", "0");
-				if (string.IsNullOrEmpty(sDistance) || !Int32.TryParse(sDistance, out int iDistance)) iDistance = 0;
-				if (iDistance <= 0) iDistance = 0;
-				else if (iDistance >= g_iMaxDistance) iDistance = g_iMaxDistance;
-				g_iDistance[player.Slot] = iDistance;
-			}
 		}
 #nullable enable
 		void SetValue(CCSPlayerController? player)
 #nullable disable
 		{
 			if (player == null || !player.IsValid) return;
-			if (_PlayerSettingsAPI != null)
-			{
-				if (g_bHide[player.Slot]) _PlayerSettingsAPI.SetPlayerSettingsValue(player, "HT_Hide", "1");
-				else _PlayerSettingsAPI.SetPlayerSettingsValue(player, "HT_Hide", "0");
-
-				_PlayerSettingsAPI.SetPlayerSettingsValue(player, "HT_Distance", g_iDistance[player.Slot].ToString());
-			}
 		}
 
 		void CreateTimer()
