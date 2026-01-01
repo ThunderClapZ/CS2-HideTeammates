@@ -19,7 +19,6 @@ namespace CS2_HideTeammates
 		int g_iMaxDistance = 8000;
 		bool[] g_bHide = new bool[65];
 		int[] g_iDistance = new int[65];
-		bool[] g_bRMB = new bool[65];
 		List<CCSPlayerController>[] g_Target = new List<CCSPlayerController>[65];
 		CounterStrikeSharp.API.Modules.Timers.Timer g_Timer;
 
@@ -66,7 +65,6 @@ namespace CS2_HideTeammates
 			RegisterListener<OnMapStart>(OnMapStart_Listener);
 			RegisterListener<OnMapEnd>(OnMapEnd_Listener);
 			RegisterListener<CheckTransmit>(OnTransmit);
-			RegisterListener<OnPlayerButtonsChanged>(OnOnPlayerButtonsChanged_Listener);
 
 			CreateTimer();
 		}
@@ -78,18 +76,10 @@ namespace CS2_HideTeammates
 			RemoveListener<OnMapStart>(OnMapStart_Listener);
 			RemoveListener<OnMapEnd>(OnMapEnd_Listener);
 			RemoveListener<CheckTransmit>(OnTransmit);
-			RemoveListener<OnPlayerButtonsChanged>(OnOnPlayerButtonsChanged_Listener);
 
 			CloseTimer();
 		}
 
-		private void OnOnPlayerButtonsChanged_Listener(CCSPlayerController player, PlayerButtons pressed, PlayerButtons released)
-		{
-			if (player != null && player.IsValid)
-			{
-				g_bRMB[player.Slot] = (player.Buttons & PlayerButtons.Attack2) != 0;
-			}
-		}
 		HookResult OnEventPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
 		{
 			CCSPlayerController player = @event.Userid;
@@ -138,7 +128,7 @@ namespace CS2_HideTeammates
 				g_Target[player.Slot].Clear();
 				if (g_bHide[player.Slot] && player.Pawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE)
 				{
-					Utilities.GetPlayers().Where(target => target != null && target.IsValid && target.Pawn.IsValid && !g_bRMB[player.Slot] && target.Slot != player.Slot && target.Team == player.Team && target.Pawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE).ToList().ForEach(targetplayer =>
+					Utilities.GetPlayers().Where(target => target != null && target.IsValid && target.Pawn.IsValid && target.Slot != player.Slot && target.Team == player.Team && target.Pawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE).ToList().ForEach(targetplayer =>
 					{
 						if (g_iDistance[player.Slot] == 0) g_Target[player.Slot].Add(targetplayer);
 						else
